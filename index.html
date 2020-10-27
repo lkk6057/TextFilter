@@ -1,0 +1,587 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+
+<style>
+div.header{
+color:white;
+min-height: 4rem;
+background-color: #7952b3;
+box-shadow: 0 0.5rem 1rem rgba(0,0,0,.05), inset 0 -1px 0 rgba(0,0,0,.1);
+text-align: center;
+font-family: Tahoma, Geneva, sans-serif;
+position: fixed;
+width: 100%;
+}
+div.card-box {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+div.content{
+text-align: center;
+}
+.check{
+width: 20px;
+height: 20px;
+position: relative;
+top: 3px;
+}
+.textArea{
+width: 80%;
+height: 350px;
+font-family: Roboto Mono,Consolas,Courier New,monospace;
+font-size: .9rem;
+line-height: 1.45;
+text-shadow: 0.015em 0.015em 0 #666;
+color: #666;
+padding: calc(.75rem - 1px);
+white-space: nowrap;
+}
+.invisible {
+display: none;
+visibility: hidden;
+}
+    .controls{
+        font-size: 20;
+border: 1px solid black;
+width: 70%;
+margin:auto;
+    }
+.conditions{
+font-size: 20;
+    }
+.button{
+position: relative;
+bottom: 3px;
+}
+.conditionsTable{
+margin:auto;
+text-align: center;
+font-size: 20;
+//border: 1px solid black;
+    }
+    .input{
+    width:120px;
+    }
+    .short{
+    width:60px;
+    }
+table, th, td {
+  //border: 1px solid black;
+}
+</style>
+<div class = "header card-box" id = "header"><span style = "font-size: 50">Text Filter </span></div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<div id = "content" class = "content">
+<span style = "font-size: 30">Filter, match and manipulate any text.<br> Use "\n" for line breaks in replace and -1 in ranges for infinity.<br>Ranges are inclusive-exclusive.<br>Lines that meet any set match conditions can be used in filters.</span>
+<br>
+<br>
+<span style = "font-size: 30">Input Text:</span><br>
+<textarea class = "textArea" id = "inputArea" oninput = "inputChanged()" onchange = "inputUpdated()"></textarea>
+<br>
+    <div id = "stats" style = "font-size: 20;">Characters: <span id = "charCount">0</span> Lines: <span id = "lineCount">0</span></div>
+<br>
+    <div id = "conditions" class = "conditions">Match all lines with any of the conditions:<select id = "addCondition" onchange = "addCondition()"><option value="addCondition">Add Match Condition</option> <option value="contains">Contains Text</option><option value="length">Line Length</option><option value="lineNumber">Line Number</option></select><br>
+    <table id = "conditionsTable" class = "conditionsTable"></table>    <br>
+    Matched Lines: <span name = "matchedLineCount">0</span></div><br>
+<span style = "font-size: 30">Controls and Filters:</span>
+<div id = "controls" class = "controls">
+<br>
+    
+Replace <select id = "replaceTextOrLines"> <option value="text">Text</option><option value="lines">Lines that contain the text</option><option value="matched">Matched Lines</option><option value="textMatched">Text in Matched Lines</option></select> <input type = "text" id = "replace1"> with <input type = "text" id = "replace2"> (Match Case: <input type = "checkbox" id = "replaceMatch" class = "check" checked>) <input type = "button" class = "button btn btn-primary" value = "Replace" onclick = "replace()"><br><br>
+
+    <select id = "keepOrRemoveLines"> <option value="keep">Keep</option><option value="remove">Remove</option></select> all <span name = "matchedLineCount">0</span> matched lines <input type = "button" class = "button btn btn-primary" value = "Filter" onclick = "keepLines()"><br>
+<br>
+
+Append string <input type = "text" id = "appendString" class = "input"> <select id = "appendBeforeAfter"> <option value="before">Before</option><option value="after">After</option></select> <select id = "appendAllMatched"> <option value="all">Every line</option><option value="matched">Matched lines</option></select> <input type = "button" class = "button btn btn-primary" value = "Append" onclick = "append()"><br><br>
+
+Remove <input type = "number" id = "removeCount" class = "short" value = "0"> character(s) from the <select id = "removeFrontBack"><option value="front">Front of</option><option value="back">Back of</option></select> <select id = "removeAllMatched"> <option value="every">Every line</option><option value="matched">Matched lines</option></select> <input type = "button" class = "button btn btn-primary" value = "Remove" onclick = "remove()"><br>
+    
+    <br><span style = "font-size: 25">Apply all filters to input field <input type = "checkbox" id = "applyToInput" class = "check"></span>
+</div>
+<br>
+<span style = "font-size: 30">Output Text:</span><input type = "button" class = "button btn btn-primary" value = "Copy to Input" onclick = "copyToInput()">
+<br>
+<textarea class = "textArea" id = "outputArea"></textarea>
+</div>
+
+<div class = "invisible" id = "">
+<div id = "rowTemplates">
+<div><span>Contains text </span><span><input type = "text" class = "input" onchange = "updateConditions()"></span><span>, occurring </span><span><input type = "number" class = "short" onchange = "updateConditions()" value = "1"></span><span> to </span><span><input type = "number" class = "short" onchange = "updateConditions()" value = "100"></span><span> times. Match Case: </span><span><input type = "checkbox" class = "check" onchange = "updateConditions()" checked></span><span> Invert selection: </span><span><input type = "checkbox" class = "check" onchange = "updateConditions()"></span><span>   </span><span><input type = "button" value = "X" class = "button btn btn-danger"></span></div>
+    
+<div><span>Has character length between </span><span><input type = "number" class = "short" onchange = "updateConditions()" value = "0"></span><span> and </span><span><input type = "number" class = "short" onchange = "updateConditions()" value = "100"></span><span> Invert selection: </span><span><input type = "checkbox" class = "check" onchange = "updateConditions()"></span><span>   </span><span><input type = "button" value = "X" class = "button btn btn-danger"></span></div>
+
+    <div><span>Is line number between </span><span><input type = "number" class = "short" onchange = "updateConditions()" value = "0"></span><span> and </span><span><input type = "number" class = "short" onchange = "updateConditions()" value = "100"></span><span> Invert selection: </span><span><input type = "checkbox" class = "check" onchange = "updateConditions()"></span><span>   </span><span><input type = "button" value = "X" class = "button btn btn-danger"></span></div>
+</table>
+</div>
+<script>
+var matchedLines = [];
+var conditions = [];
+function ele(id){
+    return document.getElementById(id);
+}
+    
+function updateMatchedLinesCount(){
+    var elements = document.getElementsByName("matchedLineCount");
+    for(var i = 0;i<elements.length;i++){
+        var element = elements[i];
+        element.innerHTML = matchedLines.length;
+        element.value = matchedLines.length;
+    }
+}
+function inputChanged(){
+    var inputString = ele("inputArea").value;
+    ele("charCount").innerHTML = inputString.length;
+    ele("lineCount").innerHTML = inputString.split("\n").length;
+
+}
+function inputUpdated(){
+    matchLines();
+}
+function matchLines(){
+        var inputString = ele("inputArea").value;
+    var lines = inputString.split("\n");
+    var newMatched = [];
+    for(var i = 0;i<lines.length;i++){
+        var line = lines[i];
+        var matched = false;
+        for(var e =0;e<conditions.length;e++){
+            var condition = conditions[e];
+        switch(condition.type){
+        case "contains":
+        var workingString = line;
+        var compareString = condition.text;
+        if(!condition.caseSensitive){
+           compareString = compareString.toLowerCase();
+            workingString = workingString.toLowerCase();
+           }
+    var upper = condition.upper;
+            if(upper==-1){
+           upper = Infinity;
+           }
+            var occurrences = workingString.split(compareString).length-1;
+        if(!condition.invert){
+        if(occurrences>=condition.lower&&occurrences<upper){
+           matched = true;
+           }
+        }
+        else{
+        if(occurrences<condition.lower||occurrences>=upper){
+           matched = true;
+           }
+        }
+        break;
+        case "length":
+        var lower = condition.lower;
+        var upper = condition.upper;
+        if(upper==-1){
+           upper = Infinity;
+            console.log("infinity");
+           }
+        if(!condition.invert){
+        if(line.length>=lower&&line.length<upper){
+           matched = true;
+           }
+        }
+        else{
+        if(line.length<lower||line.length>=upper){
+           matched = true;
+           }  
+        }
+        break;
+        case "lineNumber":
+        var lower = condition.lower;
+        var upper = condition.upper;
+        if(upper==-1){
+           upper = Infinity;
+                console.log("infinity");
+           }
+        if(!condition.invert){
+        if(i>=lower&&line.length<upper){
+           matched = true;
+           }
+        }
+        else{
+        if(i<lower||line.length>=upper){
+           matched = true;
+           }   
+        }
+        break;
+           }
+        var lineObj = {number:i,text:line};
+        if(matched&&!duplicateMatch(newMatched,lineObj)){
+           newMatched.push(lineObj);
+           }
+        }
+    }
+    matchedLines = newMatched;
+    updateMatchedLinesCount();
+}
+function duplicateMatch(matchedArray,match){
+    var duplicate = false;
+    for(var i = 0;i<matchedArray.length;i++){
+        if(matchedArray[i].number==match.number){
+           duplicate = true;
+            break;
+           }
+    }
+    return duplicate;
+}
+function renderConditions(){
+        var rowTemplates = getDivs(ele("rowTemplates"));
+        var conditionsDiv = ele("conditionsTable");
+        conditionsTable.innerHTML = "";
+    var conditionHtml = "";
+    for(var i =0;i<conditions.length;i++){
+     var condition = conditions[i];
+        switch(condition.type){
+        case "contains":
+        conditionHtml = rowTemplates[0].outerHTML;
+        break;
+        case "length":
+        conditionHtml = rowTemplates[1].outerHTML;
+        break;
+        case "lineNumber":
+        conditionHtml = rowTemplates[2].outerHTML;
+        break;
+           }
+    conditionsDiv.innerHTML += conditionHtml;
+    }
+    var rows = getDivs(conditionsDiv);
+    for(var i =0;i<rows.length;i++){
+        var row = rows[i];
+        var spans = getSpans(row);
+        var condition = conditions[i];
+        switch(condition.type){
+        case "contains":
+        spans[1].childNodes[0].value = condition.text;
+        spans[3].childNodes[0].value = condition.lower;
+        spans[5].childNodes[0].value = condition.upper;
+        spans[7].childNodes[0].checked = condition.caseSensitive;
+        spans[9].childNodes[0].checked = condition.invert;
+        break;
+        case "length":
+        spans[1].childNodes[0].value = condition.lower;
+        spans[3].childNodes[0].value = condition.upper;
+        spans[5].childNodes[0].checked = condition.invert;
+        break;
+        case "lineNumber":
+        spans[1].childNodes[0].value = condition.lower;
+        spans[3].childNodes[0].value = condition.upper;
+        spans[5].childNodes[0].checked = condition.invert;
+        break;
+           }
+var xButton = spans[spans.length-1].childNodes[0];
+if(xButton.getAttribute("type")=="button"){
+   xButton.setAttribute("onclick","removeCondition("+i+")");
+   }
+    }
+matchLines();
+}
+function updateConditions(){
+        var conditionsDiv = ele("conditionsTable");
+        var rows = getDivs(conditionsDiv);
+        for(var i =0;i<conditions.length;i++){
+        var row = rows[i];
+        var spans = getSpans(row);
+        var condition = conditions[i];
+        switch(condition.type){
+        case "contains":
+        condition.text = spans[1].childNodes[0].value;
+        condition.lower = spans[3].childNodes[0].value;
+        condition.upper = spans[5].childNodes[0].value;
+        condition.caseSensitive = spans[7].childNodes[0].checked;
+        condition.invert = spans[9].childNodes[0].checked;
+        break;
+        case "length":
+        condition.lower = spans[1].childNodes[0].value;
+        condition.upper = spans[3].childNodes[0].value;
+        condition.invert = spans[5].childNodes[0].checked;
+        break;
+        case "lineNumber":
+        condition.lower = spans[1].childNodes[0].value;
+        condition.upper = spans[3].childNodes[0].value;
+        condition.invert = spans[5].childNodes[0].checked;
+        break;
+           }
+    }
+    matchLines();
+}
+function addCondition(){
+    var newConditionName = ele("addCondition").value;
+    var condition = {};
+    switch(newConditionName){
+        case "contains":
+        condition = {type:newConditionName,text:"",lower:1,upper:100,caseSensitive:true,invert: false};
+        break;
+        case "length":
+        condition = {type:newConditionName,lower:0,upper:100,invert: false};
+        break;
+        case "lineNumber":
+        condition = {type:newConditionName,lower:0,upper:100,invert: false};
+        break;
+           }
+    conditions.push(condition);
+    renderConditions();
+    ele("addCondition").value = "addCondition";
+}
+function removeCondition(index){
+    conditions.splice(index,1);
+    renderConditions();
+    matchLines();
+}
+function getDivs(div){
+var divs = div.childNodes;
+var divArray = [];
+for (var i = 0; i < divs.length; i += 1) {
+if(divs[i].tagName=="DIV"){
+  divArray.push(divs[i]);
+}
+}
+return divArray;
+}
+function getSpans(div){
+var spans = div.childNodes;
+var spanArray = [];
+for (var i = 0; i < spans.length; i += 1) {
+if(spans[i].tagName=="SPAN"){
+  spanArray.push(spans[i]);
+}
+}
+return spanArray;
+}
+function replace(){
+    var inputString = ele("inputArea").value;
+    var workingString = inputString;
+    var replaceString = ele("replace1").value.replace("\\n","\n");
+    var replacementString = ele("replace2").value.replace("\\n","\n");
+    var replaceType = ele("replaceTextOrLines").value;
+    var caseSensitive = ele("replaceMatch").checked;
+    var outputString = "";
+    switch(replaceType){
+        case "text":
+        if(replacementString!=="\n"){
+        if(caseSensitive){
+           outputString = inputString.replaceAll(replaceString,replacementString);
+           }
+        else{
+            var regEx = new RegExp(replaceString, "ig");
+            outputString = inputString.replace(regEx,replacementString);
+        }
+    }else{
+        outputString = inputString.split(replaceString).join("\n");
+        console.log("e");
+    }
+        
+        break;
+        case "lines":
+        var lines = inputString.split("\n");
+        for(var i = 0;i<lines.length;i++){
+        var contains = false;
+        var line = lines[i];
+        if(caseSensitive){
+           if(line.includes(replaceString)){
+            contains = true
+              }
+           }
+        else{
+           if(line.toLowerCase().includes(replaceString)){
+            contains = true
+              }
+        }
+        if(contains){
+          lines[i] = replacementString;
+           }
+        }
+        outputString = lines.join("\n");
+        break;
+        case "matched":
+        var lines = inputString.split("\n");
+        
+        for(var i = 0;i<lines.length;i++){
+        var line = lines[i];
+        var foundLine = getLine(matchedLines,i);
+        if(foundLine!=null){
+           lines[i] = replacementString;
+           }
+        outputString = lines.join("\n")
+        }
+        break;
+        case "textMatched":
+        var lines = inputString.split("\n");
+        
+        for(var i = 0;i<lines.length;i++){
+        var line = lines[i];
+        var foundLine = getLine(matchedLines,i);
+        if(foundLine!=null){
+           lines[i] = replacementString;
+        if(caseSensitive){
+           lines[i] = line.replaceAll(replaceString,replacementString);
+           }
+        else{
+            var regEx = new RegExp(replaceString, "ig");
+            lines[i] = line.replace(regEx,replacementString);
+        }
+           }
+        outputString = lines.join("\n")
+        }
+        break;
+    }
+    outputText(outputString);
+}
+function getLine(lineArray,index){
+    var line = null;
+    for(var i = 0;i<lineArray.length;i++){
+        if(lineArray[i].number==index){
+           line = lineArray[i];
+            break;
+           }
+    }
+    return line;
+}
+function keepLines(){
+    var keepMode = ele("keepOrRemoveLines").value;
+    var inputString = ele("inputArea").value;
+    var outputString = "";
+    switch(keepMode){
+        case "keep":
+                        var matchedStrings = [];
+        for(var i =0;i<matchedLines.length;i++){
+        matchedStrings.push(matchedLines[i].text);
+        }
+        outputString = matchedStrings.join("\n");
+            break;
+        case "remove":
+        var filtered = [];
+        var lines = inputString.split("\n");
+        for(var i =0;i<lines.length;i++){
+        var line = lines[i];
+        if(getLine(matchedLines,i)==null){
+        filtered.push(line);
+           }
+        outputString = filtered.join("\n");
+        }
+            break;
+           }
+
+outputText(outputString);
+}
+function outputText(outputString){
+    var lines = outputString.split("\n");
+    for(var i = 0;i<lines.length;i++){
+    var line = lines[i];
+    lines[i] = line.replace("%ln%",i);
+    }
+    var parsedOutput = lines.join("\n");
+    var applyToInput = ele("applyToInput").checked;
+    ele("outputArea").value = parsedOutput;
+    if(applyToInput){
+    ele("inputArea").value = parsedOutput;  
+       }
+}
+function copyToInput(){
+    ele("inputArea").value = ele("outputArea").value;
+}
+function append(){
+    var appendString = ele("appendString").value;
+    var beforeAfter = ele("appendBeforeAfter").value;
+    var allMatched = ele("appendAllMatched").value;
+    var inputString = ele("inputArea").value;
+
+    appendState = 0;
+    if(allMatched=="all"){
+        if(beforeAfter=="before"){
+        appendState = 0;
+           }
+        else if(beforeAfter=="after"){
+        appendState = 1;   
+           }
+    }
+    else if (allMatched=="matched"){
+        if(beforeAfter=="before"){
+        appendState = 2;   
+           }
+        else if(beforeAfter=="after"){
+        appendState = 3;   
+           }        
+    }
+    var lines = inputString.split("\n");
+    for(var i = 0;i<lines.length;i++){
+    var line = lines[i];
+    switch(appendState){
+        case 0:
+        lines[i] = appendString+line;
+        break;
+        case 1:
+        lines[i] = line+appendString;
+        break;
+        case 2:
+        if(isMatched(i)){
+        lines[i] = appendString+line;
+           }
+        break;
+        case 3:
+        if(isMatched(i)){
+        lines[i] = line+appendString;
+           }
+        break;
+           }
+    }
+    var outputString = lines.join("\n");
+    outputText(outputString);
+}
+function isMatched(index){
+return getLine(matchedLines,index)!=null;
+}
+function remove(){
+    var removeCount = ele("removeCount").value;
+    var frontBack = ele("removeFrontBack").value;
+    var allMatched = ele("removeAllMatched").value;
+    var inputString = ele("inputArea").value;
+    removeState = 0;
+    if(allMatched=="all"){
+        if(frontBack=="front"){
+        removeState = 0;
+           }
+        else if(frontBack=="back"){
+        removeState = 1;   
+           }
+    }
+    else if (allMatched=="matched"){
+        if(frontBack=="front"){
+        removeState = 2;   
+           }
+        else if(frontBack=="back"){
+        removeState = 3;   
+           }        
+    }
+    var lines = inputString.split("\n");
+    for(var i = 0;i<lines.length;i++){
+    var line = lines[i];
+    
+    switch(removeState){
+        case 0:
+        lines[i] = line.slice(removeCount);
+        break;
+        case 1:
+        lines[i] = line.slice(0,-removeCount);
+        break;
+        case 2:
+        if(isMatched(i)){
+        lines[i] = line.slice(removeCount);
+           }
+        break;
+        case 3:
+        if(isMatched(i)){
+        lines[i] = line.slice(0,-removeCount);
+           }
+        break;
+           }
+    }
+    var outputString = lines.join("\n");
+    outputText(outputString);
+}
+</script>
