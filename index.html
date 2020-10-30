@@ -77,7 +77,7 @@ table, th, td {
 <br>
 <br>
 <div id = "content" class = "content">
-<span style = "font-size: 30">Filter, match and manipulate any text.<br> Use "\n" for line breaks in replace and -1 in ranges for infinity.<br>Ranges are inclusive-exclusive.<br>Lines that meet any set match conditions can be used in filters.</span>
+<span style = "font-size: 30">Filter, match and manipulate any text.<br> Use "\n" for line breaks in replace and -1 in ranges for infinity.<br>Ranges are inclusive-exclusive.<br>Lines that meet any set match conditions can be used in filters.<br> %ln% is used to indicate the line number.</span>
 <br>
 <br>
 <span style = "font-size: 30">Input Text:</span><br>
@@ -543,7 +543,9 @@ function remove(){
     var allMatched = ele("removeAllMatched").value;
     var inputString = ele("inputArea").value;
     removeState = 0;
-    if(allMatched=="all"){
+        console.log(allMatched);
+    console.log(frontBack);
+    if(allMatched=="every"){
         if(frontBack=="front"){
         removeState = 0;
            }
@@ -559,6 +561,7 @@ function remove(){
         removeState = 3;   
            }        
     }
+console.log(removeState);
     var lines = inputString.split("\n");
     for(var i = 0;i<lines.length;i++){
     var line = lines[i];
