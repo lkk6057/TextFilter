@@ -94,13 +94,15 @@ table, th, td {
     
 Replace <select id = "replaceTextOrLines"> <option value="text">Text</option><option value="lines">Lines that contain the text</option><option value="matched">Matched Lines</option><option value="textMatched">Text in Matched Lines</option></select> <input type = "text" id = "replace1"> with <input type = "text" id = "replace2"> (Match Case: <input type = "checkbox" id = "replaceMatch" class = "check" checked>) <input type = "button" class = "button btn btn-primary" value = "Replace" onclick = "replace()"><br><br>
 
-    <select id = "keepOrRemoveLines"> <option value="keep">Keep</option><option value="remove">Remove</option></select> all <span name = "matchedLineCount">0</span> matched lines <input type = "button" class = "button btn btn-primary" value = "Filter" onclick = "keepLines()"><br>
+    <select id = "keepOrRemoveLines"> <option value="keep">Keep</option><option value="remove">Remove</option></select> <select id = "allEvenOdd" onchange = "updateEvenOddMatch()"> <option value="all">All</option><option value="even">All even</option><option value="odd">All odd</option></select> matched lines (<span id = "matchedEvenOddCount">0</span>) <input type = "button" class = "button btn btn-primary" value = "Filter" onclick = "keepLines()"><br>
 <br>
 
 Append string <input type = "text" id = "appendString" class = "input"> <select id = "appendBeforeAfter"> <option value="before">Before</option><option value="after">After</option></select> <select id = "appendAllMatched"> <option value="all">Every line</option><option value="matched">Matched lines</option></select> <input type = "button" class = "button btn btn-primary" value = "Append" onclick = "append()"><br><br>
 
-Remove <input type = "number" id = "removeCount" class = "short" value = "0"> character(s) from the <select id = "removeFrontBack"><option value="front">Front of</option><option value="back">Back of</option></select> <select id = "removeAllMatched"> <option value="every">Every line</option><option value="matched">Matched lines</option></select> <input type = "button" class = "button btn btn-primary" value = "Remove" onclick = "remove()"><br>
-    
+Remove <input type = "number" id = "removeCount" class = "short" value = "0"> character(s) from the <select id = "removeFrontBack"><option value="front">Front of</option><option value="back">Back of</option></select> <select id = "removeAllMatched"> <option value="every">Every line</option><option value="matched">Matched lines</option></select> <input type = "button" class = "button btn btn-primary" value = "Remove" onclick = "remove()"><br><br>
+
+Split <select id = "splitEveryMatched"> <option value="every">Every line</option><option value="matched">Matched lines</option></select> by string <input type = "text" id = "splitSeparator" class = "input"> with respect to  config <input type = "number" id = "splitConfig" style = "width:100px"> (ex: "010" = remove:keep:remove) <input type = "button" class = "button btn btn-primary" value = "Split" onclick = "split()">
+
     <br><span style = "font-size: 25">Apply all filters to input field <input type = "checkbox" id = "applyToInput" class = "check"></span>
 </div>
 <br>
@@ -124,7 +126,32 @@ var conditions = [];
 function ele(id){
     return document.getElementById(id);
 }
-    
+
+function updateEvenOddMatch(){
+    var evenLines = 0;
+    var oddLines = 0;
+    var allEvenOdd = ele("allEvenOdd").value;
+    for(var i =0;i<matchedLines.length;i++){
+        var matchedLine = matchedLines[i];
+        if(isEven(matchedLine.number)){
+           evenLines++;
+           }
+           else{
+           oddLines++;
+           }
+           }
+    switch(allEvenOdd){
+        case "all":
+        ele("matchedEvenOddCount").innerHTML = matchedLines.length;
+            break;
+                case "even":
+        ele("matchedEvenOddCount").innerHTML = evenLines;
+            break;
+            case "odd":
+        ele("matchedEvenOddCount").innerHTML = oddLines;
+            break;
+           }
+}
 function updateMatchedLinesCount(){
     var elements = document.getElementsByName("matchedLineCount");
     for(var i = 0;i<elements.length;i++){
@@ -201,12 +228,13 @@ function matchLines(){
                 console.log("infinity");
            }
         if(!condition.invert){
-        if(i>=lower&&line.length<upper){
+        console.log(lower+" "+i+" "+upper);
+        if(i>=lower&&i<upper){
            matched = true;
            }
         }
         else{
-        if(i<lower||line.length>=upper){
+        if(i<lower||i>=upper){
            matched = true;
            }   
         }
@@ -220,6 +248,7 @@ function matchLines(){
     }
     matchedLines = newMatched;
     updateMatchedLinesCount();
+    updateEvenOddMatch();
 }
 function duplicateMatch(matchedArray,match){
     var duplicate = false;
@@ -443,28 +472,40 @@ function getLine(lineArray,index){
     }
     return line;
 }
+function isEven(number){
+    return number%2==0;
+}
 function keepLines(){
     var keepMode = ele("keepOrRemoveLines").value;
     var inputString = ele("inputArea").value;
+    var allEvenOdd = ele("allEvenOdd").value;
     var outputString = "";
     switch(keepMode){
         case "keep":
                         var matchedStrings = [];
+            console.log(allEvenOdd);
         for(var i =0;i<matchedLines.length;i++){
+        if(allEvenOdd=="all"||(allEvenOdd=="even"&&isEven(i))||(allEvenOdd=="odd"&&!isEven(i))){
         matchedStrings.push(matchedLines[i].text);
+        }
         }
         outputString = matchedStrings.join("\n");
             break;
         case "remove":
         var filtered = [];
         var lines = inputString.split("\n");
+        
         for(var i =0;i<lines.length;i++){
         var line = lines[i];
-        if(getLine(matchedLines,i)==null){
+        var evenOddMatch = false;
+        if(allEvenOdd=="all"||allEvenOdd=="even"&&isEven(i)||allEvenOdd=="odd"&&!isEven(i)){
+        evenOddMatch = true;
+        }
+        if(getLine(matchedLines,i)==null||!evenOddMatch){
         filtered.push(line);
            }
-        outputString = filtered.join("\n");
         }
+        outputString = filtered.join("\n");
             break;
            }
 
@@ -485,6 +526,7 @@ function outputText(outputString){
 }
 function copyToInput(){
     ele("inputArea").value = ele("outputArea").value;
+    matchLines();
 }
 function append(){
     var appendString = ele("appendString").value;
@@ -584,6 +626,28 @@ console.log(removeState);
            }
         break;
            }
+    }
+    var outputString = lines.join("\n");
+    outputText(outputString);
+}
+function split(){
+    var everyMatched = ele("splitEveryMatched").value;
+    var separator = ele("splitSeparator").value;
+    var config = ele("splitConfig").value.toString();
+    var inputString = ele("inputArea").value;
+    var lines = inputString.split("\n");
+    for(var i =0;i<lines.length;i++){
+       var line = lines[i];
+        if(everyMatched=="every"||isMatched(i)){
+        var split = line.split(separator);
+        var newSplit = [];
+        for(var e = 0;e<split.length;e++){
+            if(e<config.length&&config[e]!=0){
+               newSplit.push(split[e]);
+               }
+        }
+        lines[i] = newSplit.join(separator);
+    }
     }
     var outputString = lines.join("\n");
     outputText(outputString);
